@@ -64,6 +64,11 @@ class PhotoViewModel(
         loadPhotos()
     }
 
+    fun deletePhotos(photos: List<PhotoItem>) {
+        repository.deletePhotos(photos.map { it.id })
+        loadPhotos()
+    }
+
     fun clearUserMessage() {
         _uiState.update { it.copy(userMessage = null) }
     }

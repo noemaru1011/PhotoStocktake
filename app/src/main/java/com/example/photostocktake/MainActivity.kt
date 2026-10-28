@@ -1,6 +1,7 @@
 package com.example.photostocktake
 
 import android.Manifest
+import android.app.Activity
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.pm.PackageManager
@@ -32,6 +33,8 @@ import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
 
+    private var pendingDeletePhotos: List<PhotoItem> = emptyList()
+
     private val viewModel: PhotoViewModel by viewModels {
         val prefsSource = SharedPreferencesDataSourceImpl(applicationContext)
         val localSource = MediaStorePhotoDataSourceImpl(contentResolver)
@@ -57,8 +60,11 @@ class MainActivity : ComponentActivity() {
     private val deleteLauncher =
         registerForActivityResult(
             ActivityResultContracts.StartIntentSenderForResult(),
-        ) {
-            viewModel.loadPhotos()
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                viewModel.deletePhotos(pendingDeletePhotos)
+            }
+            pendingDeletePhotos = emptyList()
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -164,6 +170,7 @@ class MainActivity : ComponentActivity() {
         if (photos.isEmpty()) return
 
         val uris = photos.map { it.uri }
+        pendingDeletePhotos = photos
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             try {
@@ -176,6 +183,7 @@ class MainActivity : ComponentActivity() {
                     IntentSenderRequest.Builder(intentSender).build(),
                 )
             } catch (e: Exception) {
+                pendingDeletePhotos = emptyList()
                 Toast.makeText(
                     this,
                     "削除確認を開けませんでした: ${e.message}",

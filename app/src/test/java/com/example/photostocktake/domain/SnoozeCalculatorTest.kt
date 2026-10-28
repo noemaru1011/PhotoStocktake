@@ -40,6 +40,9 @@ class SnoozeCalculatorTest {
 
         assertTrue(calculator.isDueForReview(pastSnooze))
         assertFalse(calculator.isDueForReview(futureSnooze))
+
+        val dueAtNow = pastSnooze.copy(reviewAt = now)
+        assertTrue(calculator.isDueForReview(dueAtNow))
     }
 
     @Test

@@ -9,6 +9,7 @@ interface PhotoRepository {
     fun loadPhotos(): List<PhotoItem>
     fun keepPhoto(photoId: Long)
     fun snoozePhoto(photo: PhotoItem, reviewAtMillis: Long)
+    fun deletePhotos(photoIds: Collection<Long>)
 }
 
 class PhotoRepositoryImpl(
@@ -59,5 +60,13 @@ class PhotoRepositoryImpl(
         preferencesDataSource.setReviewAt(photo.id, reviewAtMillis)
         preferencesDataSource.setPhotoName(photo.id, photo.name)
         notificationScheduler.scheduleCustom(photo.id, photo.name, reviewAtMillis)
+    }
+
+    override fun deletePhotos(photoIds: Collection<Long>) {
+        photoIds.forEach { photoId ->
+            preferencesDataSource.setPhotoStatus(photoId, PhotoStatus.DELETED)
+            preferencesDataSource.clearReviewAt(photoId)
+            notificationScheduler.cancelCustom(photoId)
+        }
     }
 }

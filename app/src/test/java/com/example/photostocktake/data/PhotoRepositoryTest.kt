@@ -56,11 +56,36 @@ class PhotoRepositoryTest {
     }
 
     @Test
+    fun `ベースライン未設定時は写真を一覧に含めない`() {
+        fakeLocalDataSource.photos = listOf(
+            PhotoItem(id = 1L, name = "p1.jpg", dateTaken = 200L, dateAdded = 200L),
+        )
+
+        val result = repository.loadPhotos()
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
     fun `残す操作を行った場合にステータスをKEPTに変更し通知予約を解除する`() {
         repository.keepPhoto(10L)
 
         assertEquals(PhotoStatus.KEPT, fakePreferencesDataSource.getPhotoStatus(10L))
         assertTrue(fakeScheduler.cancelledCustomIds.contains(10L))
+    }
+
+    @Test
+    fun `削除承認後の複数写真をDELETEDに更新し再確認通知を解除する`() {
+        fakePreferencesDataSource.setPhotoStatus(5L, PhotoStatus.SNOOZED)
+        fakePreferencesDataSource.setReviewAt(5L, 99999L)
+        fakePreferencesDataSource.setPhotoStatus(6L, PhotoStatus.PENDING)
+
+        repository.deletePhotos(listOf(5L, 6L))
+
+        assertEquals(PhotoStatus.DELETED, fakePreferencesDataSource.getPhotoStatus(5L))
+        assertEquals(PhotoStatus.DELETED, fakePreferencesDataSource.getPhotoStatus(6L))
+        assertEquals(0L, fakePreferencesDataSource.getReviewAt(5L))
+        assertEquals(listOf(5L, 6L), fakeScheduler.cancelledCustomIds)
     }
 
     @Test
